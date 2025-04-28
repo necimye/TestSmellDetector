@@ -121,7 +121,7 @@ public class GeneralFixture extends AbstractSmell {
                 //call visit(NameExpr) for current method
                 super.visit(n, arg);
 
-                testMethod = new TestMethod(n.getNameAsString());
+                testMethod = new TestMethod(n.getNameAsString(),n.resolve().getQualifiedName());
                 boolean isSmelly = fixtureCount.size() != setupFields.size();
                 testMethod.setSmell(isSmelly);
                 smellyElementsSet.add(testMethod);

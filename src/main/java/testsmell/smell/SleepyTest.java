@@ -52,7 +52,7 @@ public class SleepyTest extends AbstractSmell {
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
                 currentMethod = n;
-                testMethod = new TestMethod(n.getNameAsString());
+                testMethod = new TestMethod(n.getNameAsString(), n.resolve().getQualifiedName());
                 testMethod.setSmell(false); //default value is false (i.e. no smell)
                 super.visit(n, arg);
 

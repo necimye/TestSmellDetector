@@ -1,16 +1,19 @@
 package testsmell;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TestClass extends SmellyElement {
 
     private String className;
+    private final String fullyQualifiedName;
     private boolean hasSmell;
     private Map<String, String> data;
 
-    public TestClass(String className) {
+    public TestClass(String className, String fullyQualifiedName) {
         this.className = className;
+        this.fullyQualifiedName = fullyQualifiedName;
         data = new HashMap<>();
     }
 
@@ -25,6 +28,11 @@ public class TestClass extends SmellyElement {
     @Override
     public String getElementName() {
         return className;
+    }
+
+    @Override
+    public String getFullyQualifiedName() {
+        return fullyQualifiedName;
     }
 
     @Override

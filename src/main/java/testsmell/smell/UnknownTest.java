@@ -1,14 +1,14 @@
 package testsmell.smell;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import testsmell.AbstractSmell;
-import testsmell.SmellyElement;
 import testsmell.TestMethod;
 import testsmell.Util;
 import thresholds.Thresholds;
@@ -24,83 +24,84 @@ public class UnknownTest extends AbstractSmell {
         super(thresholds);
     }
 
-    /**
-     * Checks of 'Unknown Test' smell
-     */
     @Override
     public String getSmellName() {
         return "Unknown Test";
     }
 
-    /**
-     * Analyze the test file for test methods that do not have assert statement or exceptions
-     */
     @Override
-    public void runAnalysis(CompilationUnit testFileCompilationUnit, CompilationUnit productionFileCompilationUnit, String testFileName, String productionFileName) throws FileNotFoundException {
-        UnknownTest.ClassVisitor classVisitor;
-        classVisitor = new UnknownTest.ClassVisitor();
+    public void runAnalysis(CompilationUnit testFileCompilationUnit, CompilationUnit productionFileCompilationUnit,
+                            String testFileName, String productionFileName) throws FileNotFoundException {
+        UnknownTest.ClassVisitor classVisitor = new UnknownTest.ClassVisitor();
         classVisitor.visit(testFileCompilationUnit, null);
     }
 
     private class ClassVisitor extends VoidVisitorAdapter<Void> {
         private MethodDeclaration currentMethod = null;
-        TestMethod testMethod;
-        List<String> assertMessage = new ArrayList<>();
-        boolean hasAssert = false;
-        boolean hasExceptionAnnotation = false;
+        private TestMethod testMethod;
+        private List<String> assertMessage = new ArrayList<>();
+        private boolean hasAssert = false;
+        private boolean hasExceptionAnnotation = false;
 
-        // examine all methods in the test class
         @Override
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
+                // Get test class FQN
+                String testClassFQN = n.findAncestor(ClassOrInterfaceDeclaration.class)
+                        .map(cls -> cls.getFullyQualifiedName()
+                                .orElse(cls.getNameAsString()))
+                        .orElse("UnknownClass");
+
+                // Check for @Test(expected = ...)
                 Optional<AnnotationExpr> assertAnnotation = n.getAnnotationByName("Test");
-                if (assertAnnotation.isPresent()) {
-                    for (int i = 0; i < assertAnnotation.get().getNodeLists().size(); i++) {
-                        NodeList<?> c = assertAnnotation.get().getNodeLists().get(i);
-                        for (int j = 0; j < c.size(); j++)
-                            if (c.get(j) instanceof MemberValuePair) {
-                                if (((MemberValuePair) c.get(j)).getName().equals("expected") && ((MemberValuePair) c.get(j)).getValue().toString().contains("Exception"))
-                                    ;
-                                hasExceptionAnnotation = true;
-                            }
+                if (assertAnnotation.isPresent() && assertAnnotation.get() instanceof NormalAnnotationExpr) {
+                    NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) assertAnnotation.get();
+                    for (MemberValuePair pair : normalAnnotation.getPairs()) {
+                        if (pair.getNameAsString().equals("expected") && pair.getValue().toString().contains("Exception")) {
+                            hasExceptionAnnotation = true;
+                            break;
+                        }
                     }
                 }
+
                 currentMethod = n;
-                testMethod = new TestMethod(n.getNameAsString());
-                testMethod.setSmell(false); //default value is false (i.e. no smell)
+                String methodFQN;
+                try {
+                    methodFQN = n.resolve().getQualifiedName();
+                } catch (Exception e) {
+                    methodFQN = testClassFQN + "." + n.getNameAsString();
+                    System.err.println("Failed to resolve method " + n.getNameAsString() + ": " + e.getMessage());
+                }
+
+                testMethod = new TestMethod(n.getNameAsString(), methodFQN);
+                testMethod.setSmell(false);
+
+                // Visit method body to check for assertions
                 super.visit(n, arg);
 
-                // no assertions and no annotation
-                if (!hasAssert && !hasExceptionAnnotation)
+                // Mark as smelly if no assertions and no exception annotation
+                if (!hasAssert && !hasExceptionAnnotation) {
                     testMethod.setSmell(true);
+                }
 
                 smellyElementsSet.add(testMethod);
 
-                //reset values for next method
+                // Reset for next method
                 currentMethod = null;
                 assertMessage = new ArrayList<>();
                 hasAssert = false;
+                hasExceptionAnnotation = false;
             }
         }
 
-
-        // examine the methods being called within the test method
         @Override
         public void visit(MethodCallExpr n, Void arg) {
             super.visit(n, arg);
             if (currentMethod != null) {
-                // if the name of a method being called start with 'assert'
-                if (n.getNameAsString().startsWith(("assert"))) {
+                if (n.getNameAsString().startsWith("assert") || n.getNameAsString().equals("fail")) {
                     hasAssert = true;
                 }
-                // if the name of a method being called is 'fail'
-                else if (n.getNameAsString().equals("fail")) {
-                    hasAssert = true;
-                }
-
             }
         }
-
     }
 }
-

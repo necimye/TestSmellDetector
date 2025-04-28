@@ -51,7 +51,7 @@ public class ConditionalTestLogic extends AbstractSmell {
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
                 currentMethod = n;
-                testMethod = new TestMethod(n.getNameAsString());
+                testMethod = new TestMethod(n.getNameAsString(), n.resolve().getQualifiedName());
                 testMethod.setSmell(false); //default value is false (i.e. no smell)
                 super.visit(n, arg);
 
@@ -121,7 +121,7 @@ public class ConditionalTestLogic extends AbstractSmell {
         }
 
         @Override
-        public void visit(ForeachStmt n, Void arg) {
+        public void visit(ForEachStmt n, Void arg) {
             super.visit(n, arg);
             if (currentMethod != null) {
                 foreachCount++;

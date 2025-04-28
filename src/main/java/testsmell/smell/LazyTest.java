@@ -65,7 +65,7 @@ public class LazyTest extends AbstractSmell {
                 if (s.stream().filter(y -> y.getTestMethod().equals(method.getTestMethod())).count() != s.size()) {
                     // If counts don not match, this production method is used by multiple test methods. Hence, there is a Lazy Test smell.
                     // If the counts were equal it means that the production method is only used (called from) inside one test method
-                    TestMethod testClass = new TestMethod(method.getTestMethod());
+                    TestMethod testClass = new TestMethod(method.getTestMethod(), method.getQualifiedTestMethod());
                     testClass.setSmell(true);
                     smellyElementsSet.add(testClass);
                 }
@@ -75,10 +75,13 @@ public class LazyTest extends AbstractSmell {
 
     private class MethodUsage {
         private String testMethod, productionMethod;
+        private String qualifiedTestMethod, qualifiedProductionMethod;
 
-        public MethodUsage(String testMethod, String productionMethod) {
+        public MethodUsage(String testMethod, String productionMethod, String qualifiedTestMethod, String qualifiedProductionMethod) {
             this.testMethod = testMethod;
             this.productionMethod = productionMethod;
+            this.qualifiedTestMethod = qualifiedTestMethod;
+            this.qualifiedProductionMethod = qualifiedProductionMethod;
         }
 
         public String getProductionMethod() {
@@ -87,6 +90,12 @@ public class LazyTest extends AbstractSmell {
 
         public String getTestMethod() {
             return testMethod;
+        }
+        public String getQualifiedTestMethod() {
+            return qualifiedTestMethod;
+        }
+        public String getQualifiedProductionMethod() {
+            return qualifiedProductionMethod;
         }
     }
 
@@ -128,7 +137,7 @@ public class LazyTest extends AbstractSmell {
             if (Objects.equals(fileType, TEST_FILE)) {
                 if (Util.isValidTestMethod(n)) {
                     currentMethod = n;
-                    testMethod = new TestMethod(currentMethod.getNameAsString());
+                    testMethod = new TestMethod(currentMethod.getNameAsString(), n.resolve().getQualifiedName());
                     testMethod.setSmell(false); //default value is false (i.e. no smell)
                     super.visit(n, arg);
 
@@ -138,8 +147,10 @@ public class LazyTest extends AbstractSmell {
                 }
             } else { //collect a list of all public/protected members of the production class
                 for (Modifier modifier : n.getModifiers()) {
-                    if (modifier.name().toLowerCase().equals("public") || modifier.name().toLowerCase().equals("protected")) {
+                    if (modifier.getKeyword().asString().toLowerCase().equals("public") ||
+                            modifier.getKeyword().asString().toLowerCase().equals("protected")) {
                         productionMethods.add(n);
+
                     }
                 }
 
@@ -163,7 +174,7 @@ public class LazyTest extends AbstractSmell {
             if (currentMethod != null) {
                 if (productionMethods.stream().anyMatch(i -> i.getNameAsString().equals(n.getNameAsString()) &&
                         i.getParameters().size() == n.getArguments().size())) {
-                    calledProductionMethods.add(new MethodUsage(currentMethod.getNameAsString(), n.getNameAsString()));
+                    calledProductionMethods.add(new MethodUsage(currentMethod.getNameAsString(), n.getNameAsString(), currentMethod.resolve().getQualifiedName(), n.resolve().getQualifiedName()));
                 } else {
                     if (n.getScope().isPresent()) {
                         if (n.getScope().get() instanceof NameExpr) {
@@ -172,7 +183,7 @@ public class LazyTest extends AbstractSmell {
                             ///if the scope matches a variable which, in turn, is of type of the production class
                             if (((NameExpr) n.getScope().get()).getNameAsString().equals(productionClassName) ||
                                     productionVariables.contains(((NameExpr) n.getScope().get()).getNameAsString())) {
-                                calledProductionMethods.add(new MethodUsage(currentMethod.getNameAsString(), n.getNameAsString()));
+                                calledProductionMethods.add(new MethodUsage(currentMethod.getNameAsString(), n.getNameAsString(), currentMethod.resolve().getQualifiedName(), n.resolve().getQualifiedName()));
                             }
                         }
                     }

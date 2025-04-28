@@ -18,9 +18,8 @@ public class ResultsWriter {
      * Creates the file into which output it to be written into. Results from each file will be stored in a new file
      * @throws IOException
      */
-    private ResultsWriter() throws IOException {
-        String time =  String.valueOf(Calendar.getInstance().getTimeInMillis());
-        outputFile = MessageFormat.format("{0}_{1}_{2}.{3}", "Output","TestSmellDetection",time, "csv");
+    private ResultsWriter(String filename) throws IOException {
+        outputFile = MessageFormat.format("{0}", filename);
         writer = new FileWriter(outputFile,false);
     }
 
@@ -29,8 +28,8 @@ public class ResultsWriter {
      * @return new ResultsWriter instance
      * @throws IOException
      */
-    public static ResultsWriter createResultsWriter() throws IOException {
-        return new ResultsWriter();
+    public static ResultsWriter createResultsWriter(String filename) throws IOException {
+        return new ResultsWriter(filename);
     }
 
     /**

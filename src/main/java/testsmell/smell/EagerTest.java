@@ -104,7 +104,7 @@ public class EagerTest extends AbstractSmell {
             if (Objects.equals(fileType, TEST_FILE)) {
                 if (Util.isValidTestMethod(n)) {
                     currentMethod = n;
-                    testMethod = new TestMethod(currentMethod.getNameAsString());
+                    testMethod = new TestMethod(currentMethod.getNameAsString(), n.resolve().getQualifiedName());
                     testMethod.setSmell(false); //default value is false (i.e. no smell)
                     super.visit(n, arg);
 
@@ -122,7 +122,8 @@ public class EagerTest extends AbstractSmell {
                 }
             } else { //collect a list of all public/protected members of the production class
                 for (Modifier modifier : n.getModifiers()) {
-                    if (modifier.name().toLowerCase().equals("public") || modifier.name().toLowerCase().equals("protected")) {
+                    if (modifier.getKeyword().asString().toLowerCase().equals("public") ||
+                            modifier.getKeyword().asString().toLowerCase().equals("protected")) {
                         productionMethods.add(n);
                     }
                 }

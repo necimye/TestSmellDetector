@@ -1,7 +1,11 @@
 package testsmell
 
 import com.github.javaparser.JavaParser
+import com.github.javaparser.ParserConfiguration
 import com.github.javaparser.ast.CompilationUnit
+import com.github.javaparser.symbolsolver.JavaSymbolSolver
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -19,8 +23,18 @@ class TestAssertionsDetection {
 
     @BeforeEach
     fun setup() {
-        testCompilationUnit = JavaParser.parse(simpleTest)
-        productionCompilationUnit = JavaParser.parse(simpleClass)
+        // Configure JavaParser with symbol solver
+        val typeSolver = CombinedTypeSolver().apply {
+            add(ReflectionTypeSolver())
+        }
+        val parserConfiguration = ParserConfiguration().apply {
+            setSymbolResolver(JavaSymbolSolver(typeSolver))
+        }
+        val javaParser = JavaParser(parserConfiguration)
+
+        // Parse compilation units
+        testCompilationUnit = javaParser.parse(simpleTest).result.get()
+        productionCompilationUnit = javaParser.parse(simpleClass).result.get()
         testFile = mock(TestFile::class.java)
         Mockito.`when`(testFile.testFileNameWithoutExtension).thenReturn("fake/path")
         Mockito.`when`(testFile.productionFileNameWithoutExtension).thenReturn("fake/path")

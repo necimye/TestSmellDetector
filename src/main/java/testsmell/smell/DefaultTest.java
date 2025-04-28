@@ -47,7 +47,7 @@ public class DefaultTest extends AbstractSmell {
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
             if (n.getNameAsString().equals("ExampleUnitTest") || n.getNameAsString().equals("ExampleInstrumentedTest")) {
-                testClass = new TestClass(n.getNameAsString());
+                testClass = new TestClass(n.getNameAsString(), n.resolve().getQualifiedName());
                 testClass.setHasSmell(true);
                 smellyElementsSet.add(testClass);
             }

@@ -4,14 +4,14 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import testsmell.AbstractSmell;
-import testsmell.SmellyElement;
-import testsmell.TestMethod;
-import testsmell.Util;
+import testsmell.*;
 import thresholds.Thresholds;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * "Guess what's wrong?" This smell comes from having a number of assertions in a test method that have no explanation.
@@ -21,6 +21,8 @@ import java.util.List;
 public class AssertionRoulette extends AbstractSmell {
 
     private int assertionsCount = 0;
+    private String testFileName;
+    private List<SmellDetail> smellDetails = new ArrayList<>();
 
     public AssertionRoulette(Thresholds thresholds) {
         super(thresholds);
@@ -41,6 +43,7 @@ public class AssertionRoulette extends AbstractSmell {
     public void runAnalysis(CompilationUnit testFileCompilationUnit, CompilationUnit productionFileCompilationUnit, String testFileName, String productionFileName) throws FileNotFoundException {
         AssertionRoulette.ClassVisitor classVisitor;
         classVisitor = new AssertionRoulette.ClassVisitor();
+        this.testFileName = testFileName;
         classVisitor.visit(testFileCompilationUnit, null);
         assertionsCount = classVisitor.overallAssertions;
     }
@@ -61,7 +64,8 @@ public class AssertionRoulette extends AbstractSmell {
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
                 currentMethod = n;
-                testMethod = new TestMethod(n.getNameAsString());
+                String fullyQualifiedName = n.resolve().getQualifiedName();
+                testMethod = new TestMethod(n.getNameAsString(), fullyQualifiedName);
                 testMethod.setSmell(false); //default value is false (i.e. no smell)
                 super.visit(n, arg);
 
@@ -129,6 +133,25 @@ public class AssertionRoulette extends AbstractSmell {
 
             }
         }
+
+//        private void captureDetail(MethodCallExpr assertion, String filePath) {
+//            assertion.getRange().ifPresent(range -> {
+//                int startLine = range.begin.line;
+//                int endLine = range.end.line;
+//                SmellDetail detail = new SmellDetail(
+//                        filePath,
+//                        startLine,
+//                        endLine,
+//                        range.begin.column,
+//                        range.end.column,
+//                        "METHOD_CALL",
+//                        assertion.getNameAsString(),
+//                        assertion.toString()
+//                );
+//                smellDetails.add(detail);
+//                System.out.println("[DEBUG] Smell captured at " + filePath + " from line " + startLine + " to " + endLine);
+//            });
+//        }
 
     }
 }
