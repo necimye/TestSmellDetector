@@ -30,7 +30,6 @@ public class Main {
                 return;
             }
         }
-
         TestSmellDetector testSmellDetector = new TestSmellDetector(new DefaultThresholds());
         String outputFileName = args[1];
 
@@ -104,8 +103,6 @@ public class Main {
                     columnValues.add(escapeCSVValue(smellDetails));
 
                 } catch (NullPointerException e) {
-                    System.out.println("NullPointerException: " + e.getMessage());
-                    e.printStackTrace();
                     columnValues.add("");
                 }
             }
