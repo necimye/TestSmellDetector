@@ -9,6 +9,7 @@ import testsmell.AbstractSmell;
 import testsmell.SmellyElement;
 import testsmell.TestClass;
 import testsmell.TestMethod;
+import testsmell.Util;
 import thresholds.Thresholds;
 
 import java.io.FileNotFoundException;
@@ -51,7 +52,7 @@ public class IgnoredTest extends AbstractSmell {
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
             if (n.getAnnotationByName("Ignore").isPresent()) {
-                testClass = new TestClass(n.getNameAsString(), n.resolve().getQualifiedName());
+                testClass = new TestClass(n.getNameAsString(), Util.getTypeQualifiedName(n));
                 testClass.setHasSmell(true);
                 smellyElementsSet.add(testClass);
             }
@@ -68,7 +69,7 @@ public class IgnoredTest extends AbstractSmell {
             //check if test method has Ignore annotation
             if (n.getAnnotationByName("Test").isPresent()) {
                 if (n.getAnnotationByName("Ignore").isPresent()) {
-                    testMethod = new TestMethod(n.getNameAsString(), n.resolve().getQualifiedName());
+                    testMethod = new TestMethod(n.getNameAsString(), Util.getMethodQualifiedName(n));
                     testMethod.setSmell(true);
                     smellyElementsSet.add(testMethod);
                     return;
@@ -79,7 +80,7 @@ public class IgnoredTest extends AbstractSmell {
             //check if test method is not public
             if (n.getNameAsString().toLowerCase().startsWith("test")) {
                 if (!n.isPublic()) {
-                    testMethod = new TestMethod(n.getNameAsString(), n.resolve().getQualifiedName());
+                    testMethod = new TestMethod(n.getNameAsString(), Util.getMethodQualifiedName(n));
                     testMethod.setSmell(true);
                     smellyElementsSet.add(testMethod);
                     return;

@@ -46,7 +46,7 @@ public class SensitiveEquality extends AbstractSmell {
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
                 currentMethod = n;
-                testMethod = new TestMethod(n.getNameAsString(), n.resolve().getQualifiedName());
+                testMethod = new TestMethod(n.getNameAsString(), Util.getMethodQualifiedName(n));
                 testMethod.setSmell(false); //default value is false (i.e. no smell)
                 super.visit(n, arg);
 

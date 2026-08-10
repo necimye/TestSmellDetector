@@ -1,12 +1,11 @@
 package testsmell.smell;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
-import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import testsmell.AbstractSmell;
 import testsmell.TestMethod;
@@ -46,51 +45,31 @@ public class UnknownTest extends AbstractSmell {
         @Override
         public void visit(MethodDeclaration n, Void arg) {
             if (Util.isValidTestMethod(n)) {
-                // Get test class FQN
-                String testClassFQN = n.findAncestor(ClassOrInterfaceDeclaration.class)
-                        .map(cls -> cls.getFullyQualifiedName()
-                                .orElse(cls.getNameAsString()))
-                        .orElse("UnknownClass");
-
-                // Check for @Test(expected = ...)
                 Optional<AnnotationExpr> assertAnnotation = n.getAnnotationByName("Test");
                 if (assertAnnotation.isPresent() && assertAnnotation.get() instanceof NormalAnnotationExpr) {
                     NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) assertAnnotation.get();
                     for (MemberValuePair pair : normalAnnotation.getPairs()) {
-                        if (pair.getNameAsString().equals("expected") && pair.getValue().toString().contains("Exception")) {
-                            hasExceptionAnnotation = true;
-                            break;
-                        }
+                        if (pair.getNameAsString().equals("expected") && pair.getValue().toString().contains("Exception"))
+                            ;
+                        hasExceptionAnnotation = true;
                     }
                 }
 
                 currentMethod = n;
-                String methodFQN;
-                try {
-                    methodFQN = n.resolve().getQualifiedName();
-                } catch (Exception e) {
-                    methodFQN = testClassFQN + "." + n.getNameAsString();
-                    System.err.println("Failed to resolve method " + n.getNameAsString() + ": " + e.getMessage());
-                }
-
-                testMethod = new TestMethod(n.getNameAsString(), methodFQN);
-                testMethod.setSmell(false);
-
-                // Visit method body to check for assertions
+                testMethod = new TestMethod(n.getNameAsString(), Util.getMethodQualifiedName(n));
+                testMethod.setSmell(false); //default value is false (i.e. no smell)
                 super.visit(n, arg);
 
-                // Mark as smelly if no assertions and no exception annotation
-                if (!hasAssert && !hasExceptionAnnotation) {
+                // no assertions and no annotation
+                if (!hasAssert && !hasExceptionAnnotation)
                     testMethod.setSmell(true);
-                }
 
                 smellyElementsSet.add(testMethod);
 
-                // Reset for next method
+                //reset values for next method
                 currentMethod = null;
                 assertMessage = new ArrayList<>();
                 hasAssert = false;
-                hasExceptionAnnotation = false;
             }
         }
 
@@ -98,7 +77,12 @@ public class UnknownTest extends AbstractSmell {
         public void visit(MethodCallExpr n, Void arg) {
             super.visit(n, arg);
             if (currentMethod != null) {
-                if (n.getNameAsString().startsWith("assert") || n.getNameAsString().equals("fail")) {
+                // if the name of a method being called start with 'assert'
+                if (n.getNameAsString().startsWith(("assert"))) {
+                    hasAssert = true;
+                }
+                // if the name of a method being called is 'fail'
+                else if (n.getNameAsString().equals("fail")) {
                     hasAssert = true;
                 }
             }

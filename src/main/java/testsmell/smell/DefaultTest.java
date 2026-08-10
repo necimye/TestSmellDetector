@@ -6,6 +6,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import testsmell.AbstractSmell;
 import testsmell.SmellyElement;
 import testsmell.TestClass;
+import testsmell.Util;
 import thresholds.Thresholds;
 
 import java.io.FileNotFoundException;
@@ -47,7 +48,7 @@ public class DefaultTest extends AbstractSmell {
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
             if (n.getNameAsString().equals("ExampleUnitTest") || n.getNameAsString().equals("ExampleInstrumentedTest")) {
-                testClass = new TestClass(n.getNameAsString(), n.resolve().getQualifiedName());
+                testClass = new TestClass(n.getNameAsString(), Util.getTypeQualifiedName(n));
                 testClass.setHasSmell(true);
                 smellyElementsSet.add(testClass);
             }

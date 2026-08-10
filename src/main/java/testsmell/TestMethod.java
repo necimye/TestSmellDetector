@@ -11,7 +11,6 @@ public class TestMethod extends SmellyElement {
     private boolean hasSmell;
     private Map<String, String> data;
 
-    private List<SmellDetail> smellDetails;
 
     public TestMethod(String methodName, String fullyQualifiedName) {
         this.methodName = methodName;
@@ -27,10 +26,6 @@ public class TestMethod extends SmellyElement {
         data.put(name, value);
     }
 
-
-    public void addSmellDetail(SmellDetail smellDetail) {
-        smellDetails.add(smellDetail);
-    }
 
     @Override
     public String getElementName() {

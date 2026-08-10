@@ -2,18 +2,12 @@ package testsmell;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
-import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.TypeDeclaration;
-import com.github.javaparser.symbolsolver.JavaSymbolSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.apache.commons.lang3.StringUtils;
 import testsmell.smell.*;
 import thresholds.Thresholds;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -86,21 +80,7 @@ public class TestSmellDetector {
         FileInputStream testFileInputStream=null, productionFileInputStream = null;
 
 
-        // Configure symbol solver
-        CombinedTypeSolver typeSolver = new CombinedTypeSolver();
-        typeSolver.add(new ReflectionTypeSolver(false));
-        if (!StringUtils.isEmpty(testFile.getTestFilePath())) {
-            File testDir = new File(testFile.getTestFilePath()).getParentFile();
-            typeSolver.add(new JavaParserTypeSolver(testDir));
-        }
-        if (!StringUtils.isEmpty(testFile.getProductionFilePath())) {
-            File prodDir = new File(testFile.getProductionFilePath()).getParentFile();
-            typeSolver.add(new JavaParserTypeSolver(prodDir));
-        }
-        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
-        ParserConfiguration parserConfiguration = new ParserConfiguration();
-        parserConfiguration.setSymbolResolver(symbolSolver);
-        JavaParser parser = new JavaParser(parserConfiguration);
+        JavaParser parser = new JavaParser();
 
 
         // Parse test file
@@ -154,7 +134,7 @@ public class TestSmellDetector {
                         testFile.getTestFileNameWithoutExtension(),
                         testFile.getProductionFileNameWithoutExtension());
                 testFile.addSmell(smell);
-            } catch (Exception e) {
+            } catch (FileNotFoundException e) {
                 testFile.addSmell(null);
                 continue;
             }

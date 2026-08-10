@@ -8,6 +8,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import testsmell.AbstractSmell;
 import testsmell.SmellyElement;
 import testsmell.TestClass;
+import testsmell.Util;
 import thresholds.Thresholds;
 
 import java.io.FileNotFoundException;
@@ -67,7 +68,7 @@ public class ConstructorInitialization extends AbstractSmell {
             // This check is needed to handle java files that have multiple classes
             if (n.getNameAsString().equals(testFileName)) {
                 if (!constructorAllowed) {
-                    testClass = new TestClass(n.getNameAsString(), n.resolve().getQualifiedName());
+                    testClass = new TestClass(n.getNameAsString(), Util.getTypeQualifiedName(n));
                     testClass.setHasSmell(true);
                     smellyElementsSet.add(testClass);
                 }

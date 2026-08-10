@@ -1,11 +1,7 @@
 package testsmell
 
 import com.github.javaparser.JavaParser
-import com.github.javaparser.ParserConfiguration
 import com.github.javaparser.ast.CompilationUnit
-import com.github.javaparser.symbolsolver.JavaSymbolSolver
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,16 +24,7 @@ class TestDetectionCorrectness {
 
     @BeforeEach
     fun setup() {
-        // Configure JavaParser with symbol solver
-        val typeSolver = CombinedTypeSolver().apply {
-            add(ReflectionTypeSolver())
-        }
-        val parserConfiguration = ParserConfiguration().apply {
-            setSymbolResolver(JavaSymbolSolver(typeSolver))
-        }
-        val javaParser = JavaParser(parserConfiguration)
-
-        // Parse compilation units
+        val javaParser = JavaParser()
         testCompilationUnit = javaParser.parse(fractionTest).result.get()
         productionCompilationUnit = javaParser.parse(fractionSource).result.get()
 
